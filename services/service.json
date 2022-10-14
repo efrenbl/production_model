@@ -1,0 +1,31 @@
+[
+    {
+      "ParameterKey": "Environment",
+      "ParameterValue": "production"
+    },
+    {
+      "ParameterKey": "Prefix",
+      "ParameterValue": "prod"
+    },
+    {
+      "ParameterKey": "Tag",
+      "ParameterValue": "prod"
+    },
+    {
+      "ParameterKey": "ShortName",
+      "ParameterValue": "simple-app"
+    },
+    {
+      "ParameterKey": "LongName",
+      "ParameterValue": "simple-python-app"
+    },
+    {
+      "ParameterKey": "VPCName",
+      "ParameterValue": "prod-vpc"
+    },
+    {
+      "ParameterKey": "AutoScalingTargetValue",
+      "ParameterValue": "60"
+    }
+  ]
+  

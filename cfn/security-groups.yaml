@@ -1,0 +1,118 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Provisions the security groups required by the other stacks.
+
+Parameters:
+  Environment:
+    Type: String
+
+  Prefix:
+    Type: String
+
+  Tag:
+    Type: String
+
+  VPCName:
+    Type: String
+
+Resources:
+#-----------ECS Security Group---------
+  ECSTaskSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ECS task security group
+      GroupName: !Sub "${Prefix}-ecs-task-sg"
+      VpcId:
+        Fn::ImportValue: !Ref VPCName
+      SecurityGroupIngress:
+        - IpProtocol: "-1"
+          SourceSecurityGroupId: !Ref LoadBalancerSecurityGroup
+        # - IpProtocol: tcp
+        #   FromPort: 443
+        #   ToPort: 443
+        #   CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub "${Prefix}-ecs-task-sg"
+        - Key: Environment
+          Value: !Sub "${Tag}"
+
+#-----------LB Security Group---------
+
+  LoadBalancerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Load balancer security group
+      GroupName: !Sub "${Prefix}-load-balancer-sg"
+      VpcId:
+        Fn::ImportValue: !Ref VPCName
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: -1
+          ToPort: -1
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub "${Prefix}-load-balancer-sg"
+        - Key: Environment
+          Value: !Sub "${Tag}"
+
+#-----------------ECR------------
+  ECREndpointSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ECR endpoint security group
+      GroupName: !Sub "${Prefix}-ecr-endpoint-sg"
+      VpcId:
+        Fn::ImportValue: !Ref VPCName
+      SecurityGroupIngress:
+        - IpProtocol: "-1"
+          SourceSecurityGroupId: !Ref ECSTaskSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub "${Prefix}-ecr-endpoint-sg"
+        - Key: Environment
+          Value: !Sub "${Tag}"
+
+#-----------------Cloud watch------------
+  LogsEndpointSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Logs endpoint security group
+      GroupName: !Sub "${Prefix}-logs-endpoint-sg"
+      VpcId:
+        Fn::ImportValue: !Ref VPCName
+      SecurityGroupIngress:
+        - IpProtocol: "-1"
+          SourceSecurityGroupId: !Ref ECSTaskSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub "${Prefix}-logs-endpoint-sg"
+        - Key: Environment
+          Value: !Sub "${Tag}"
+
+
+#-----------Outputs---------
+Outputs:
+  ECSTaskSecurityGroup:
+    Description: A reference to the ECS task security group ID
+    Value: !Ref ECSTaskSecurityGroup
+    Export:
+      Name: !Sub "${Prefix}-ecs-task-sg"
+
+  LoadBalancerSecurityGroup:
+    Description: A reference to the load balancer security group ID
+    Value: !Ref LoadBalancerSecurityGroup
+    Export:
+      Name: !Sub "${Prefix}-load-balancer-sg"
+
+  LogsEndpointSecurityGroup:
+    Description: A reference to the Cloudwatch logs endpoint security group ID
+    Value: !Ref LogsEndpointSecurityGroup
+    Export:
+      Name: !Sub "${Prefix}-logs-endpoint-sg"
+
+  ECREndpointSecurityGroup:
+    Description: A reference to the ECR endpoint security group ID
+    Value: !Ref ECREndpointSecurityGroup
+    Export:
+      Name: !Sub "${Prefix}-ecr-endpoint-sg"

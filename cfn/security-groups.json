@@ -1,0 +1,19 @@
+[
+    {
+      "ParameterKey": "Environment",
+      "ParameterValue": "production"
+    },
+    {
+      "ParameterKey": "Prefix",
+      "ParameterValue": "prod"
+    },
+    {
+      "ParameterKey": "Tag",
+      "ParameterValue": "prod"
+    },
+    {
+      "ParameterKey": "VPCName",
+      "ParameterValue": "prod-vpc"
+    }
+  ]
+  

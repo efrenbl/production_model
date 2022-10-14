@@ -1,0 +1,234 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Provisions IAM roles.
+
+Parameters:
+  Environment:
+    Type: String
+
+  Prefix:
+    Type: String
+
+  Tag:
+    Type: String
+
+Resources:
+  ECSTaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${Prefix}-ecs-task-execution-role"
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: [ecs-tasks.amazonaws.com]
+            Action: ["sts:AssumeRole"]
+      Policies:
+        - PolicyName: !Sub "${Prefix}-ecs-task-execution-role-policy"
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "ecr:GetAuthorizationToken"
+                  - "ecr:BatchCheckLayerAvailability"
+                  - "ecr:GetDownloadUrlForLayer"
+                  - "ecr:BatchGetImage"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                  - "cassandra:Modify"
+                  - "cassandra:Select"
+                  - "secretsmanager:GetSecretValue"
+                  - "ssmmessages:CreateControlChannel"
+                  - "ssmmessages:CreateDataChannel"
+                  - "ssmmessages:OpenControlChannel"
+                  - "ssmmessages:OpenDataChannel"
+                  - "ecs:ListClusters"
+                  - "ecs:ListContainerInstances"
+                  - "ecs:DescribeContainerInstances"
+                  - "sagemaker:InvokeEndpointAsync"
+                  - "sagemaker:InvokeEndpoint"
+                Resource: "*"
+      Tags:
+        - Key: Name
+          Value: !Sub "${Prefix}-ecs-task-execution-role"
+        - Key: Environment
+          Value: !Sub "${Tag}"
+
+  # This role allows ECS tasks to access other AWS resources / APIs
+  ECSTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${Prefix}-ecs-task-role"
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: [ecs-tasks.amazonaws.com]
+            Action: ["sts:AssumeRole"]
+      Policies:
+        - PolicyName: !Sub "${Prefix}-ecs-task-role-policy"
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "sagemaker:InvokeEndpoint"
+                Resource: "*"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
+      Tags:
+        - Key: Name
+          Value: !Sub "${Prefix}-ecs-task-role"
+        - Key: Environment
+          Value: !Sub "${Tag}"
+ 
+  CodeBuildServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${Prefix}-code-build-service-role"
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Resource: "*"
+                Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - ecr:GetAuthorizationToken
+              - Resource: "*"
+                Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:GetObjectVersion
+              - Resource: "*"
+                Effect: Allow
+                Action:
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:BatchGetImage
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:PutImage
+                  - ecr:InitiateLayerUpload
+                  - ecr:UploadLayerPart
+                  - ecr:CompleteLayerUpload
+      Tags:
+        - Key: Name
+          Value: !Sub "${Prefix}-code-build-service-role"
+        - Key: Environment
+          Value: !Sub "${Tag}"
+
+  CodePipelineServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${Prefix}-code-pipeline-service-role"
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codepipeline.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Resource: "*"
+                Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                  - s3:GetBucketVersioning
+                  - sns:Publish
+              - Resource: "*"
+                Effect: Allow
+                Action:
+                  - ecs:DescribeServices
+                  - ecs:DescribeTaskDefinition
+                  - ecs:DescribeTasks
+                  - ecs:ListTasks
+                  - ecs:RegisterTaskDefinition
+                  - ecs:UpdateService
+                  - codebuild:StartBuild
+                  - codebuild:BatchGetBuilds
+                  - iam:PassRole
+      Tags:
+        - Key: Name
+          Value: !Sub "${Prefix}-code-pipeline-service-role"
+        - Key: Environment
+          Value: !Sub "${Tag}"
+  
+  AutoScalingRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${Prefix}-autoscaling-role-ecs"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: [ecs-tasks.amazonaws.com]
+            Action: ["sts:AssumeRole"]
+      Path: '/'
+      Policies:
+        - PolicyName: !Sub "${Prefix}-autoscaling-role-policy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Sid: ReadS3
+                Action:
+                  - "ecs:DescribeServices"
+                  - "ecs:UpdateService"
+                  - "cloudwatch:DeleteAlarms"
+                  - "cloudwatch:DescribeAlarms"
+                  - "cloudwatch:PutMetricAlarm"
+                Resource: 
+                  - '*'
+      Tags:
+        - Key: Name
+          Value: !Sub "${Prefix}-autoscaling-role-ecs"
+        - Key: Environment
+          Value: !Sub "${Tag}"
+
+Outputs:
+  ECSTaskExecutionRole:
+    Description: A reference to the ECS task execution role ARN
+    Value: !GetAtt ECSTaskExecutionRole.Arn
+    Export:
+      Name: !Sub "${Prefix}-ecs-task-execution-role"
+
+  ECSTaskRole:
+    Description: A reference to the ECS task role ARN
+    Value: !GetAtt ECSTaskRole.Arn
+    Export:
+      Name: !Sub "${Prefix}-ecs-task-role"
+  
+  CodeBuildServiceRole:
+    Description: A reference to the code build service role ARN
+    Value: !GetAtt CodeBuildServiceRole.Arn
+    Export:
+      Name: !Sub "${Prefix}-code-build-service-role"
+
+  CodePipelineServiceRole:
+    Description: A reference to the code pipeline service role ARN
+    Value: !GetAtt CodePipelineServiceRole.Arn
+    Export:
+      Name: !Sub "${Prefix}-code-pipeline-service-role"
+
+  AutoScalingRole:
+    Description: A reference to the AutoScalingRole ARN
+    Value: !GetAtt AutoScalingRole.Arn
+    Export:
+      Name: !Sub "${Prefix}-autoscaling-role-ecs"

@@ -1,0 +1,36 @@
+[
+    {
+      "ParameterKey": "Environment",
+      "ParameterValue": "production"
+    },
+    {
+      "ParameterKey": "Prefix",
+      "ParameterValue": "prod"
+    },
+    {
+      "ParameterKey": "LongName",
+      "ParameterValue": "simple-python-app"
+    },
+    {
+      "ParameterKey": "ShortName",
+      "ParameterValue": "simple-app"
+    },
+    {
+      "ParameterKey": "Tag",
+      "ParameterValue": "prod"
+    },
+    {
+      "ParameterKey": "GitHubOwner",
+      "ParameterValue": "efrenbl-alt"
+    },
+    {
+      "ParameterKey": "GitHubRepository",
+      "ParameterValue": "simple-python-app"
+    },
+    {
+      "ParameterKey": "GitHubBranch",
+      "ParameterValue": "develop"
+    }
+  ]
+  
+  

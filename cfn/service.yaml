@@ -1,0 +1,210 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Provisions an ECS Service with a external Application Load Balancer.
+
+Parameters:
+  Environment:
+    Type: String
+
+  Prefix:
+    Type: String
+
+  Tag:
+    Type: String
+
+  ShortName:
+    Type: String
+
+  LongName:
+    Type: String
+
+  VPCName:
+    Type: String
+  
+  AutoScalingTargetValue:
+    Type: Number
+
+Resources:
+  Repository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub "${Tag}-docker/${LongName}"
+      Tags:
+        - Key: Name
+          Value: !Sub "${Tag}-docker/${LongName}"
+        - Key: Environment
+          Value: !Sub "${Tag}"
+
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /ecs/${Prefix}/${LongName}
+      Tags:
+      - Key: Environment
+        Value: !Sub "${Tag}"
+  
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub "${Prefix}-${ShortName}-lb"
+      LoadBalancerAttributes:
+        - Key: idle_timeout.timeout_seconds
+          Value: "15"
+      SecurityGroups:
+        - Fn::ImportValue: !Sub "${Prefix}-load-balancer-sg"
+      Subnets:
+        Fn::Split:
+          - ","
+          - Fn::ImportValue: !Sub "${Prefix}-ecs-public-subnets"
+      Tags:
+      - Key: Name
+        Value: !Sub "${Prefix}-${ShortName}-lb"
+      - Key: Environment
+        Value: !Sub "${Tag}"
+
+  LoadBalancerListener:
+    DependsOn: LoadBalancerTargetGroup
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - TargetGroupArn: !Ref LoadBalancerTargetGroup
+          Type: forward
+
+  LoadBalancerTargetGroup:
+    DependsOn: LoadBalancer
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub "${Prefix}-${ShortName}-tg"
+      HealthCheckIntervalSeconds: 60
+      HealthCheckPath: "/health-check"
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      TargetType: ip
+      Port: 8080
+      Protocol: HTTP
+      UnhealthyThresholdCount: 2
+      VpcId:
+        Fn::ImportValue: !Ref VPCName
+
+  FargateService:
+    DependsOn: LoadBalancer
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster:
+        Fn::ImportValue: !Sub "${Prefix}-ecs-cluster"
+      ServiceName: !Sub "${Prefix}-${LongName}-service"
+      DesiredCount: 2
+      TaskDefinition: !Ref TaskDefinition
+      LaunchType: FARGATE
+      HealthCheckGracePeriodSeconds: 10
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          Subnets:
+            Fn::Split:
+              - ","
+              - Fn::ImportValue: !Sub "${Prefix}-ecs-private-subnets"
+          SecurityGroups:
+            - Fn::ImportValue: !Sub "${Prefix}-ecs-task-sg"
+      LoadBalancers:
+        - ContainerName: !Sub "${LongName}"
+          ContainerPort: 8080
+          TargetGroupArn: !Ref LoadBalancerTargetGroup
+      Tags:
+        - Key: Name
+          Value: !Sub "${Prefix}-${LongName}-service"
+        - Key: Environment
+          Value: !Sub "${Tag}"
+
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Sub "${Prefix}-${LongName}"
+      Cpu: "512"
+      Memory: "1024"
+      RequiresCompatibilities:
+        - FARGATE
+      NetworkMode: awsvpc
+      ExecutionRoleArn:
+        Fn::ImportValue: !Sub "${Prefix}-ecs-task-execution-role"
+      TaskRoleArn:
+        Fn::ImportValue: !Sub "${Prefix}-ecs-task-role"
+      ContainerDefinitions:
+        - Name: !Sub "${LongName}"
+          Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Tag}-docker/${LongName}:latest"
+          Essential: true
+          MemoryReservation: 512
+          PortMappings:
+            - ContainerPort: 8080
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-region: !Ref AWS::Region
+              awslogs-group: !Ref LogGroup
+              awslogs-stream-prefix: ecs
+      Tags:
+        - Key: Name
+          Value: !Sub "${Prefix}-${LongName}-td"
+        - Key: Environment
+          Value: !Sub "${Tag}"
+  
+  AutoScalingTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Properties:
+      MinCapacity: 2
+      MaxCapacity: 10
+      ResourceId: !Join
+        - '/'
+        - - service
+          - Fn::ImportValue: !Sub "${Prefix}-ecs-cluster"
+          - !GetAtt FargateService.Name
+      ScalableDimension: ecs:service:DesiredCount
+      ServiceNamespace: ecs
+      RoleARN: 
+        Fn::ImportValue: !Sub "${Prefix}-autoscaling-role-ecs"
+
+  AutoScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyName: !Sub '${FargateService} AutoScalingPolicy'
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref AutoScalingTarget
+      TargetTrackingScalingPolicyConfiguration:
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ECSServiceAverageCPUUtilization
+        ScaleInCooldown: 10
+        ScaleOutCooldown: 10
+        # Keep things at or lower than 50% CPU utilization, for example
+        TargetValue: !Ref AutoScalingTargetValue
+  
+
+Outputs:
+  LoadBalancerDNSName:
+    Description: Load balancer DNS name
+    Value: !GetAtt LoadBalancer.DNSName
+
+  LoadBalancerFullName:
+    Description: Load balancer full name
+    Value: !GetAtt LoadBalancer.LoadBalancerFullName
+
+  LoadBalancerTargetGroupFullName:
+    Description: Load balancer target group full name
+    Value: !GetAtt LoadBalancerTargetGroup.TargetGroupFullName
+    Export:
+      Name: !Sub "${Prefix}-${ShortName}-lb-target-group-full-name"
+
+  LoadBalancerTargetGroupArn:
+    Description: Load balancer target group Arn
+    Value: !Ref LoadBalancerTargetGroup
+    Export:
+      Name: !Sub "${Prefix}-${ShortName}-lb-target-group-arn"
+
+  LogGroup:
+    Description: A reference to the API Log Group Arn
+    Value: !GetAtt LogGroup.Arn
+
+  Service:
+    Value: !Ref FargateService

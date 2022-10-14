@@ -1,0 +1,15 @@
+[
+    {
+      "ParameterKey": "Environment",
+      "ParameterValue": "production"
+    },
+    {
+      "ParameterKey": "Prefix",
+      "ParameterValue": "prod"
+    },
+    {
+      "ParameterKey": "Tag",
+      "ParameterValue": "prod"
+    }
+  ]
+  

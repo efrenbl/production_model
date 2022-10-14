@@ -1,0 +1,30 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Provisions ECS Cluster for Microservices.
+
+Parameters:
+  Environment:
+    Type: String
+
+  Prefix:
+    Type: String
+
+  Tag:
+    Type: String
+
+Resources:
+  ECSCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub "${Prefix}-ecs-cluster"
+      Tags:
+        - Key: Name
+          Value: !Sub "${Prefix}-ecs-cluster"
+        - Key: Environment
+          Value: !Sub "${Tag}"
+
+Outputs:
+  ECSCluster:
+    Description: A reference to the ECS Cluster
+    Value: !Ref ECSCluster
+    Export:
+      Name: !Sub "${Prefix}-ecs-cluster"
