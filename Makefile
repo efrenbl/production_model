@@ -65,3 +65,8 @@ create-pipeline:
 		--template-body file://cfn/pipeline.yaml \
 		--parameters file://cfn/apps/pipeline.json > log.txt
 		@cat ./log.txt  
+
+
+
+# docker build -t boston . 
+# docker run --name bostontest -p 80:80 boston  
