@@ -16,14 +16,14 @@ scalar=pickle.load(open('scaling.pkl','rb'))
 def home():
     return render_template('home.html')
 
-@app.route('/health-check')
-def health():
-    if health_status:
-        resp = jsonify(health="healthy")
-        resp.status_code = 200
-    else:
-        resp = jsonify(health="unhealthy")
-        resp.status_code = 500
+# @app.route('/health-check')
+# def health():
+#     if health_status:
+#         resp = jsonify(health="healthy")
+#         resp.status_code = 200
+#     else:
+#         resp = jsonify(health="unhealthy")
+#         resp.status_code = 500
 
 @app.route('/predict_api',methods=['POST'])
 def predict_api():

@@ -78,7 +78,7 @@ Resources:
     Properties:
       Name: !Sub "${Prefix}-${ShortName}-tg"
       HealthCheckIntervalSeconds: 60
-      HealthCheckPath: "/health-check"
+      HealthCheckPath: "/"
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 5
       HealthyThresholdCount: 2
