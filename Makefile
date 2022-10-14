@@ -55,7 +55,7 @@ create-service:
 		@aws --profile $(AWS_PROFILE) --region $(REGION) \
 		cloudformation create-stack --stack-name $(ENV_PREFIX)-$(SERVICE_NAME)-service \
 		--template-body file://cfn/service.yaml \
-		--parameters file://cfn/service.json > log.txt
+		--parameters file://cfn/apps/service.json > log.txt
 		@cat ./log.txt  
 
 create-pipeline: 
@@ -63,5 +63,5 @@ create-pipeline:
 		@aws --profile $(AWS_PROFILE) --region $(REGION) \
 		cloudformation create-stack --stack-name $(ENV_PREFIX)-$(SERVICE_NAME)-pipeline\
 		--template-body file://cfn/pipeline.yaml \
-		--parameters file://cfn/pipeline.json > log.txt
+		--parameters file://cfn/apps/pipeline.json > log.txt
 		@cat ./log.txt  
