@@ -9,11 +9,11 @@
     },
     {
       "ParameterKey": "LongName",
-      "ParameterValue": "simple-python-app"
+      "ParameterValue": "boston-python-app"
     },
     {
       "ParameterKey": "ShortName",
-      "ParameterValue": "simple-app"
+      "ParameterValue": "boston-app"
     },
     {
       "ParameterKey": "Tag",
@@ -21,11 +21,11 @@
     },
     {
       "ParameterKey": "GitHubOwner",
-      "ParameterValue": "efrenbl-alt"
+      "ParameterValue": "efrenbl"
     },
     {
       "ParameterKey": "GitHubRepository",
-      "ParameterValue": "production-model"
+      "ParameterValue": "production_model"
     },
     {
       "ParameterKey": "GitHubBranch",

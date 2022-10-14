@@ -1,10 +1,10 @@
 SHELL = /bin/sh
 
-AWS_PROFILE=
-REGION=
-ENV_PREFIX=
+AWS_PROFILE=default
+REGION=us-east-1
+ENV_PREFIX=prod
 
-SERVICE_NAME=
+SERVICE_NAME=boston-python-app
 
 create-vpc: 
 		@echo "🚀 Creating VPC"
