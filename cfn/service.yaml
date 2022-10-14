@@ -43,6 +43,7 @@ Resources:
         Value: !Sub "${Tag}"
   
   LoadBalancer:
+    DependsOn: LoadBalancerTargetGroup
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
       Name: !Sub "${Prefix}-${ShortName}-lb"
@@ -73,7 +74,6 @@ Resources:
           Type: forward
 
   LoadBalancerTargetGroup:
-    DependsOn: LoadBalancer
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       Name: !Sub "${Prefix}-${ShortName}-tg"

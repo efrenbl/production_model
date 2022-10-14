@@ -13,11 +13,11 @@
     },
     {
       "ParameterKey": "ShortName",
-      "ParameterValue": "simple-app"
+      "ParameterValue": "boston-app"
     },
     {
       "ParameterKey": "LongName",
-      "ParameterValue": "simple-python-app"
+      "ParameterValue": "boston-python-app"
     },
     {
       "ParameterKey": "VPCName",

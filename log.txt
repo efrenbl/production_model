@@ -1,0 +1,3 @@
+{
+    "StackId": "arn:aws:cloudformation:us-east-1:866571745534:stack/prod-boston-python-app-service/00a18450-4b77-11ed-9845-0e4d92fad78f"
+}
